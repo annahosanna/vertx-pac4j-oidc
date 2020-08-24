@@ -27,6 +27,9 @@ import org.pac4j.oidc.config.OidcConfiguration;
 import org.pac4j.saml.client.SAML2Client;
 import org.pac4j.saml.config.SAML2Configuration;
 import org.pac4j.vertx.authorizer.CustomAuthorizer;
+import com.nimbusds.jose.JWSAlgorithm;
+import com.nimbusds.oauth2.sdk.auth.ClientAuthenticationMethod;
+import com.nimbusds.openid.connect.sdk.op.OIDCProviderMetadata;
 
 import java.io.File;
 import java.util.Optional;
@@ -136,12 +139,34 @@ public class Pac4jConfigurationFactory implements ConfigFactory {
         return stravaClient;
     }
 
+    // OpenID Connect has many well known endpoints, although
+    // not all are required
+    // <issuer url>
+    // To get all of the endpoints:
+    // <issuer url>/.well-known/openid-configuration
+    // This will result in several enpoints
+    // /token /keys / /authz /userinfo /clients
+    // And the client has a callback such as /oauth2/idpresponse
+    // There are optional scope values such as profile and email, address but openid is required 
+    // Auto discovery will obtain all of the supported configurations
+    // In this case aws uses neither the keys or auto discovery.
+    // This means that it relies https for token encryption (not using a key from /keys endpooint)
+    // Such as RS256, Aws uses jws algorithm = none
+    // aws expects that it will have an authorization grant rather than an implicit grant
+    // For checksum it requires S256 (sha)
+
     public static OidcClient oidcClient() {
         // OpenID Connect
         final OidcConfiguration oidcConfiguration = new OidcConfiguration();
+        // Subject type must be Public
+        OIDCProviderMetadata oidcProviderMetadata = new OIDCProviederMetadata("","","");
+        oidcConfiguration.setProviderMetadata(oidcProviderMetadata);
+        
         oidcConfiguration.setClientId("736887899191-s2lsd8pakdjugkbp6v3lou7jd631rka2.apps.googleusercontent.com");
         oidcConfiguration.setSecret("18B4WAQgzs2RhUY8V_Pl0qSh");
-        oidcConfiguration.setDiscoveryURI("https://accounts.google.com/.well-known/openid-configuration");
+        // oidcConfiguration.setDiscoveryURI("https://accounts.google.com/.well-known/openid-configuration");
+        // These are fromn the rfc or openid standard
+        // acr_values
         oidcConfiguration.addCustomParam("prompt", "consent");
         final OidcClient oidcClient = new OidcClient(oidcConfiguration);
         oidcClient.addAuthorizationGenerator((ctx, profile) -> { profile.addRole("ROLE_ADMIN"); return Optional.of(profile); });

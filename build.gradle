@@ -1,0 +1,80 @@
+apply plugin: 'java'
+
+repositories {
+    mavenLocal()
+	mavenCentral()
+    maven {
+        url 'https://build.shibboleth.net/nexus/content/repositories/releases'
+    }
+
+}
+
+sourceSets {
+	main
+}
+mainClassName = 'io.vertx.core.Launcher'
+//        <demo.server.verticle>org.pac4j.vertx.verticle.MainVerticle</demo.server.verticle>
+dependancies {
+            compile('org.pac4j:vertx-pac4j:5.0.0')        
+            compile('org.pac4j:pac4j-oauth:4.0.3')
+            compile('org.pac4j:pac4j-openid:4.0.3')
+            compile('org.pac4j:pac4j-cas:4.0.3'){
+                exclude('org.slf4j:slf4j-log4j12')
+            }
+            compile('org.pac4j:pac4j-saml-opensamlv3:4.0.3')
+            compile('org.pac4j:pac4j-http:4.0.3')
+            compile('org.pac4j:pac4j-oidc:4.0.3')
+            compile('org.pac4j:pac4j-jwt:4.0.3')
+            compile('org.pac4j:pac4j-ldap:4.0.3')
+            compile('org.pac4j:pac4j-sql:4.0.3')
+            compile('org.pac4j:pac4j-mongo:4.0.3')
+            compile('io.vertx:vertx-web-templ-handlebars:3.9.2'){
+                exclude('com.fasterxml.jackson.core:jackson-core')
+            }        
+            compile('io.vertx:vertx-web:3.9.2'){
+                exclude('com.fasterxml.jackson.core:jackson-core')
+            }
+            compile('io.vertx:vertx-core:3.9.2'){
+                exclude('com.fasterxml.jackson.core:jackson-core')
+            }
+            compile('io.vertx:vertx-rx-java:3.9.2'){
+                exclude('com.fasterxml.jackson.core:jackson-core')
+            }
+            compile('org.slf4j:slf4j-api:1.7.30')
+            compile('org.slf4j:jcl-over-slf4j:1.7.30')
+            compile('org.slf4j:slf4j-log4j12:1.7.30')
+            compile('junit:junit:4.13')
+            }
+configurations {
+	compile
+}
+
+compileJava.doFirst {
+	sourceSets.main.java.srcDirs = [ 'src/main/java' ]
+}
+
+compileJave {
+    sourceCompatibility = 1.8
+}
+
+task javadocJar(type: Jar, dependsOn: javadoc) {
+    classifier = 'javadoc'
+    from 'build/docs/javadoc'
+}
+
+task sourcesJar(type: Jar) {
+    from sourceSets.main.allSource
+    classifier = 'sources'
+}
+
+jar {
+    manifest {
+        attributes (
+          'Main-Class' : 'io.vertx.core.Launcher'
+        )
+    }
+    archiveName = "oidc-test.jar"
+    from {
+      configurations.compile.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+}
